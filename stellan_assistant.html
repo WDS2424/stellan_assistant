@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Bolsão Inteligente Stellantis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Imagem de fundo usando o arquivo enviado */
+            background-image: url('image_9d4520.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        #chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        #chat-container::-webkit-scrollbar-thumb {
+            background-color: #94a3b8;
+            border-radius: 10px;
+            border: 2px solid #f1f5f9;
+        }
+        .chat-bubble, .choice-button {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slide-in 0.5s forwards;
+        }
+        @keyframes slide-in {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .hidden {
+            display: none;
+        }
+        #permission-error {
+             animation-delay: 0.2s;
+        }
+        @keyframes pulse-mic {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+        .listening-animation {
+            animation: pulse-mic 2s infinite ease-in-out;
+        }
+        /* Loading spinner */
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6; /* Tailwind blue-500 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 flex items-center justify-center h-screen">
+
+    <div class="w-full max-w-lg h-full sm:h-[90vh] sm:max-h-[700px] flex flex-col bg-white shadow-2xl rounded-2xl overflow-hidden">
+        <!-- Cabeçalho -->
+        <header class="bg-slate-800 text-white p-4 flex items-center justify-between shadow-md z-10">
+            <div>
+                <h1 class="text-xl font-bold">Assistente Inteligente</h1>
+                <p class="text-sm text-slate-300">STELLAN, seu assistente virtual</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span id="user-id-display" class="text-xs text-slate-300">ID: Carregando...</span>
+                <div id="status-indicator" class="w-4 h-4 rounded-full bg-green-500 transition-colors duration-500" title="Online"></div>
+            </div>
+        </header>
+
+        <!-- Ecrã de Boas-Vindas -->
+        <div id="welcome-screen" class="flex flex-1 flex-col items-center justify-center text-center p-8 bg-white">
+            <img src="image_9d4520.jpg" 
+                 onerror="this.onerror=null; this.src='https://placehold.co/150x150/1e293b/ffffff?text=STELLAN';"
+                 alt="Avatar do assistente STELLAN" class="w-40 h-40 rounded-full mb-6 object-cover shadow-lg">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Olá! Sou o STELLAN.</h2>
+            <p class="text-slate-600 mb-8">Clique abaixo para iniciar o registro de veículos.</p>
+            <button id="start-button" class="w-full max-w-xs p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-transform transform hover:scale-105 shadow-lg font-bold">
+                Iniciar Assistente
+            </button>
+            <p id="permission-error" class="text-red-500 mt-4 text-sm font-medium hidden"></p>
+        </div>
+
+        <!-- Conteúdo Principal (Chat ou Tela Final) -->
+        <div id="main-content" class="hidden flex-1 flex-col overflow-hidden">
+            <main id="chat-container" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50 border-t border-slate-200">
+                <!-- As mensagens do chat serão inseridas aqui -->
+            </main>
+
+            <div id="loading-indicator" class="hidden flex items-center justify-center p-4 bg-slate-100 text-slate-600">
+                <div class="loading-spinner mr-2"></div>
+                <span>A carregar...</span>
+            </div>
+
+            <div id="final-screen" class="hidden flex-1 flex-col items-center justify-center text-center p-8 bg-white">
+                 <img src="image_9d4520.jpg" 
+                      onerror="this.onerror=null; this.src='https://placehold.co/150x150/1e293b/ffffff?text=STELLAN';"
+                      alt="Avatar do assistente STELLAN" class="w-40 h-40 rounded-full mb-8 object-cover shadow-lg">
+                <div id="final-screen-content" class="overflow-y-auto">
+                    <p id="final-message" class="text-xl font-medium text-slate-700"></p>
+                </div>
+                <div class="mt-8 w-full max-w-md">
+                     <button id="new-operation-button" class="w-full p-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition shadow-md flex items-center justify-center gap-2 font-semibold">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9a9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M3 12a9 9 0 0 1 9-9a9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M3 16v-4h4"></path><path d="M21 8v4h-4"></path></svg>
+                         Nova Operação
+                     </button>
+                </div>
+            </div>
+
+            <footer id="input-footer" class="p-4 bg-white border-t border-slate-200">
+                <div id="choice-area" class="hidden justify-center items-center gap-4">
+                </div>
+                <div id="interaction-area" class="flex items-center space-x-2">
+                    <input type="text" id="userInput" class="flex-1 p-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Digite sua resposta...">
+                    <button id="mic-indicator" class="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shadow-md disabled:bg-slate-400 disabled:cursor-not-allowed">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                    </button>
+                    <button id="sendButton" class="p-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
+            </footer>
+        </div>
+        <div class="p-4 bg-slate-800 text-white flex justify-center items-center">
+            <button id="excelReportButton" class="p-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition shadow-md font-bold flex items-center justify-center" title="Gerar Relatório Excel">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="10" y2="9"></line></svg>
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        window.onload = function() {
+            // --- Elementos da UI ---
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const startButton = document.getElementById('start-button');
+            const permissionError = document.getElementById('permission-error');
+            const mainContent = document.getElementById('main-content');
+            const chatContainer = document.getElementById('chat-container');
+            const finalScreen = document.getElementById('final-screen');
+            const finalMessage = document.getElementById('final-message'); // Corrected ID here
+            const newOperationButton = document.getElementById('new-operation-button');
+            const micIndicator = document.getElementById('mic-indicator');
+            const choiceArea = document.getElementById('choice-area');
+            const interactionArea = document.getElementById('interaction-area');
+            const userInput = document.getElementById('userInput');
+            const sendButton = document.getElementById('sendButton');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const userIdDisplay = document.getElementById('user-id-display');
+            const excelReportButton = document.getElementById('excelReportButton');
+
+            // --- APIs de Voz ---
+            const synth = window.speechSynthesis;
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition;
+            
+            // --- Variáveis Firebase ---
+            let app;
+            let db;
+            let auth;
+            let userId = 'anonymous';
+            let isAuthReady = false;
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+            // --- Estado da Aplicação ---
+            let voices = [];
+            let micAllowed = false;
+            let isListening = false;
+            let intentionalStop = false;
+            let currentState = 'main_menu.start'; // Estado inicial agora é o menu principal
+            let currentFlowType = 'main_menu'; // Para controlar qual fluxo está ativo (checkin_flow, checkout_flow, main_menu)
+            let mvmFailureCount = 0;
+
+            window.chatContext = {
+                lookupResult: {}, 
+                codigo_mvm: null,
+                placa_veiculo: null,
+                bolsao_numero: null,
+                parking_authorized: null,
+            };
+
+            // --- Fluxos de Conversa ---
+            const flows = {
+                main_menu: {
+                    start: { message: "BOA TARDE! GOSTARIA DE FAZER O CHECK-IN OU O CHECK-OUT?", type: 'choice', options: ["CHECK-IN", "CHECK-OUT"] }
+                },
+                checkin_flow: {
+                    select_bolsao: { message: "Qual o número do bolsão? 01 ou 02?", type: 'choice', options: ["BOLSÃO 01", "BOLSÃO 02"] },
+                    solicita_mvm_apos_bolsao: { message: "Obrigado. Agora, por favor, informe o número do MVM (Movimento de Veículos e Materiais).", type: 'input', validation: { regex: /[0-9]{5,}/, error: "MVM inválido. Por favor, diga ou digite novamente pelo menos 5 números." }, next: "verifica_mvm" },
+                    verifica_mvm: { type: 'action', action: 'lookupMVM', success: "confirma_dados_mvm", failure: "solicita_placa_veiculo", duplicate: "finaliza_mvm_ja_registrado" }, // Alterado para finalizar
+                    mvm_nao_encontrado: { message: "MVM não encontrado. Por favor, informe a placa do veículo.", type: 'input', validation: { regex: /^[A-Z]{3}[0-9]{4}$|^[A-Z]{3}[0-9][A-Z][0-9]{2}$/, error: "Placa inválida. Por favor, diga ou digite a placa no formato AAA1234 ou AAA1A23." }, next: "verifica_placa_veiculo" },
+                    mvm_ja_registado: { message: "Este MVM já realizou o registro de entrada. A operação será finalizada.", type: 'final' }, // Novo estado final
+                    finaliza_mvm_ja_registrado: { message: "Este MVM já realizou o registro de entrada. Operação finalizada.", type: 'final' }, // Novo estado final
+                    confirma_dados_mvm: {
+                        message: "Confirme os dados: Placa: {{lookup.PlacaVeiculo}}, Transportadora: {{lookup.Fornecedor}}, Motorista: {{lookup.NomeMotorista}}, Hora Programada: {{lookup.HoraProgramada}}. Correto? Diga ou digite Sim ou Não.",
+                        type: 'confirmation',
+                        options: { 'sim': 'verifica_autorizacao_estacionamento', 'não': 'solicita_mvm_apos_bolsao' }
+                    },
+                    correcao_mvm: { message: "Entendido. Vamos tentar de novo. Diga o número do seu MVM.", type: 'input', validation: { regex: /[0-9]{5,}/, error: "MVM inválido." }, next: "solicita_mvm_apos_bolsao" },
+                    
+                    solicita_placa_veiculo: { message: "MVM não encontrado. Por favor, informe a placa do veículo.", type: 'input', validation: { regex: /^[A-Z]{3}[0-9]{4}$|^[A-Z]{3}[0-9][A-Z][0-9]{2}$/i, error: "Placa inválida. Por favor, diga ou digite a placa no formato AAA1234 ou AAA1A23." }, next: "verifica_placa_veiculo" },
+                    verifica_placa_veiculo: { type: 'action', action: 'lookupPlacaVeiculo', success: "confirma_dados_mvm", failure: "placa_nao_encontrada" },
+                    placa_nao_encontrada: { message: "Desculpe, não encontrei um MVM associado a esta placa. Por favor, verifique os dados e tente novamente.", type: 'final' },
+
+                    verifica_autorizacao_estacionamento: {
+                        type: 'action',
+                        action: 'checkParkingAuthorization',
+                        success: 'registra_entrada_bolsao',
+                        failure: 'aviso_adiantado', // Se 'too_early' da autorização
+                        late: 'notifica_atraso' // Se 'late' da autorização
+                    },
+                    aviso_adiantado: {
+                        message: "ATENÇÃO! O motorista se apresentou com mais de 2 horas de antecedência (Hora Programada: {{lookup.HoraProgramada}}). Ao prosseguir, você está a infringir as regras de estacionamento. Tem certeza que deseja fazer o CHECK-IN mesmo assim?",
+                        type: 'confirmation',
+                        options: { 'sim': 'registra_entrada_bolsao', 'não': 'finaliza_operacao_adiantado_nao_permitido' }
+                    },
+                    finaliza_operacao_adiantado_nao_permitido: {
+                        message: "Operação cancelada. O veículo não foi autorizado a estacionar devido à apresentação muito antecipada.",
+                        type: 'final'
+                    },
+                    notifica_atraso: {
+                        message: "O motorista está atrasado. A hora programada para carga/descarga era {{lookup.HoraProgramada}}. Deseja prosseguir com o registro?",
+                        type: 'confirmation',
+                        options: { 'sim': 'registra_entrada_bolsao', 'não': 'finaliza_operacao_atraso' }
+                    },
+                    finaliza_operacao_atraso: {
+                        message: "Registro não prosseguido devido ao atraso. Por favor, regularize a situação e tente novamente.",
+                        type: 'final'
+                    },
+                    registra_entrada_bolsao: { type: 'action', action: 'registerBolsaoEntry', success: "entrada_bolsao_registrada_sucesso", failure: "erro_registro_entrada_bolsao" },
+                    erro_registro_entrada_bolsao: { message: "Ocorreu um erro ao registrar a entrada no bolsão. Por favor, tente novamente ou contate o suporte.", type: 'final' },
+                    entrada_bolsao_registrada_sucesso: { 
+                        message: "Entrada no bolsão confirmada! O veículo Placa {{lookup.PlacaVeiculo}} foi registrado no Bolsão {{chatContext.bolsao_numero}}. Obrigado!", 
+                        type: 'final' 
+                    }
+                },
+                checkout_flow: {
+                    start: { message: "Por favor, informe o número do MVM (Movimento de Veículos e Materiais) para o check-out.", type: 'input', validation: { regex: /[0-9]{5,}/, error: "MVM inválido. Por favor, diga ou digite novamente pelo menos 5 números." }, next: "verifica_mvm_checkout" },
+                    verifica_mvm_checkout: { type: 'action', action: 'lookupMVMCheckout', success: "confirma_dados_checkout", failure: "mvm_nao_encontrado_checkout", not_checked_in: "mvm_nao_fez_checkin", duplicate_checkout: "finaliza_mvm_ja_checkout" }, // Alterado para finalizar
+                    mvm_nao_encontrado_checkout: { message: "Desculpe, não encontrei esse MVM. Por favor, diga ou digite o número correto.", type: 'input', validation: { regex: /[0-9]{5,}/, error: "MVM inválido." }, next: "verifica_mvm_checkout" },
+                    mvm_nao_fez_checkin: { message: "Este MVM não realizou o check-in no bolsão. Por favor, verifique o MVM ou realize o check-in primeiro.", type: 'final' },
+                    mvm_ja_registado_checkout: { message: "Este MVM já realizou o check-out. A operação será finalizada.", type: 'final' }, // Novo estado final
+                    finaliza_mvm_ja_checkout: { message: "Este MVM já realizou o check-out. Operação finalizada.", type: 'final' }, // Novo estado final
+                    confirma_dados_checkout: {
+                        message: "Confirme os dados para check-out: Placa: {{lookup.PlacaVeiculo}}, Transportadora: {{lookup.Fornecedor}}, Motorista: {{lookup.NomeMotorista}}. Correto? Diga ou digite Sim ou Não.",
+                        type: 'confirmation',
+                        options: { 'sim': 'registra_checkout', 'não': 'start' }
+                    },
+                    registra_checkout: { type: 'action', action: 'registerCheckout', success: "checkout_registrado_sucesso", failure: "erro_registro_checkout" },
+                    erro_registro_checkout: { message: "Ocorreu um erro ao registrar o check-out. Por favor, tente novamente ou contate o suporte.", type: 'final' },
+                    checkout_registrado_sucesso: { message: "Check-out confirmado! Obrigado e boa viagem.", type: 'final' }
+                }
+            };
+
+            // --- Inicialização e Autenticação Firebase ---
+            async function initializeFirebase() {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    console.error("Firebase config is missing. Cannot initialize Firebase.");
+                    return;
+                }
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = `ID: ${userId}`;
+                        isAuthReady = true;
+                        console.log("Firebase authenticated. User ID:", userId);
+                        await populateInitialMVMData();
+                    } else {
+                        try {
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch (error) {
+                            console.error("Erro durante a autenticação Firebase:", error);
+                            await signInAnonymously(auth);
+                        }
+                    }
+                });
+            }
+
+            // --- Função auxiliar para popular dados iniciais de MVM (para teste/demonstração) ---
+            async function populateInitialMVMData() {
+                if (!isAuthReady) {
+                    console.warn("Firebase não está pronto para popular dados.");
+                    return;
+                }
+                const mvmDetailsCollectionRef = collection(db, `artifacts/${appId}/public/data/mvm_details`);
+
+                const now = new Date();
+                const today = now.toLocaleDateString('pt-BR'); 
+                const tomorrow = new Date(now);
+                tomorrow.setDate(now.getDate() + 1);
+                const tomorrowStr = tomorrow.toLocaleDateString('pt-BR');
+
+                const initialDetails = {
+                    "10001": { "Fornecedor": "Transportes Alfa", "TipoVeiculo": "Carreta", "PlacaVeiculo": "ABC1001", "NomeMotorista": "Carlos Pereira", "HoraProgramada": `${today} 15:00` },
+                    "10002": { "Fornecedor": "Logística Beta", "TipoVeiculo": "VUC", "PlacaVeiculo": "XYZ2002", "NomeMotorista": "Ana Costa", "HoraProgramada": `${today} 16:30` },
+                    "10003": { "Fornecedor": "Cargas Rápidas", "TipoVeiculo": "Caminhão", "PlacaVeiculo": "DEF3003", "NomeMotorista": "Bruno Lima", "HoraProgramada": `${today} 17:00` },
+                    "10004": { "Fornecedor": "TransExpress", "TipoVeiculo": "Van", "PlacaVeiculo": "GHI4004", "NomeMotorista": "Sofia Mendes", "HoraProgramada": `${today} 10:00` },
+                    "10005": { "Fornecedor": "Rodoviária Sul", "TipoVeiculo": "Carreta", "PlacaVeiculo": "JKL5005", "NomeMotorista": "Ricardo Neves", "HoraProgramada": `${today} 11:30` },
+                    "99999": { "Fornecedor": "Desconhecido", "TipoVeiculo": "Desconhecido", "PlacaVeiculo": "PLACA123", "NomeMotorista": "Motorista Desconhecido", "HoraProgramada": `${today} 12:00` },
+                    "88888": { "Fornecedor": "Desconhecido", "TipoVeiculo": "Desconhecido", "PlacaVeiculo": "PLACA456", "NomeMotorista": "Outro Motorista", "HoraProgramada": `${today} 13:00` },
+                    
+                    "30533431": { "Fornecedor": "EXPRESSO NEPOMUCENO S/A", "TipoVeiculo": "03 - TRUCK", "PlacaVeiculo": "EXP3431", "NomeMotorista": "Motorista Nepomuceno", "HoraProgramada": `${today} 14:00` },
+                    "30536069": { "Fornecedor": "OUTROS", "TipoVeiculo": "05 - CARRETA", "PlacaVeiculo": "OUT6069", "NomeMotorista": "Motorista Outros 1", "HoraProgramada": `${today} 15:00` },
+                    "30536172": { "Fornecedor": "05 - CARRETA", "PlacaVeiculo": "CAR6172", "NomeMotorista": "Motorista Cargolift", "HoraProgramada": `${today} 16:00` },
+                    "30537008": { "Fornecedor": "JAT TRANSPORTES E LOGISTICA S.A", "TipoVeiculo": "05 - CARRETA", "PlacaVeiculo": "JAT7008", "NomeMotorista": "Motorista JAT", "HoraProgramada": `${today} 17:00` },
+                    "30537045": { "Fornecedor": "FKS LOGISTICS LTDA", "TipoVeiculo": "03 - TRUCK", "PlacaVeiculo": "FKS7045", "NomeMotorista": "Motorista FKS 1", "HoraProgramada": `${today} 18:00` },
+                    "30537156": { "Fornecedor": "OUTROS", "TipoVeiculo": "05 - CARRETA", "PlacaVeiculo": "OUT7156", "NomeMotorista": "Motorista Outros 2", "HoraProgramada": `${today} 09:00` },
+                    "30537211": { "Fornecedor": "FKS LOGISTICS LTDA", "TipoVeiculo": "05 - CARRETA", "PlacaVeiculo": "FKS7211", "NomeMotorista": "Motorista FKS 2", "HoraProgramada": `${today} 10:30` },
+                    "30537418": { "Fornecedor": "TORATRANSPORTES INDUSTRIAIS LTDA.", "TipoVeiculo": "CARRETA", "NomeMotorista": "Motorista Tora", "HoraProgramada": `${today} 11:00` },
+
+                    "30536172": { "Fornecedor": "CARGOLIFT CONTAGEM", "TipoVeiculo": "CARRETA", "PlacaVeiculo": "BCB5827", "NomeMotorista": "HEBERT MONTEIRO NASCIMENTO", "HoraProgramada": `09/07/2025 09:00` },
+                    "30537211": { "Fornecedor": "FKS LOGISTICS LTDA", "TipoVeiculo": "TRUCK", "PlacaVeiculo": "FKS0B83", "NomeMotorista": "CLEBER JUNIOR NEVES DA SILVA", "HoraProgramada": `09/07/2025 09:00` },
+                    "30537418": { "Fornecedor": "TORATRANSPORTES INDUSTRIAIS LTDA.", "TipoVeiculo": "CARRETA", "PlacaVeiculo": "RVF8D22", "NomeMotorista": "TIAGO JULIO DA SILVA", "HoraProgramada": `09/07/2025 09:00` },
+                    "30537430": { "Fornecedor": "FEDERAL TRANSPORTES LTDA", "TipoVeiculo": "TRUCK", "PlacaVeiculo": "QWU3494", "NomeMotorista": "VITOR DANIEL SANTOS FIGUEIREDO", "HoraProgramada": `09/07/2025 09:00` },
+                    "30537439": { "Fornecedor": "OUTROS", "TipoVeiculo": "CARRETA", "PlacaVeiculo": "GFE4E93", "NomeMotorista": "WAGNER ARAUJO GOMES", "HoraProgramada": `09/07/2025 09:00` },
+                    "30537458": { "Fornecedor": "JAT TRANSPORTES E LOGISTICA S.A", "TipoVeiculo": "CARRETA", "PlacaVeiculo": "EJZ9753", "NomeMotorista": "DAVI NUNES", "HoraProgramada": `09/07/2025 09:00` },
+                    "30537710": { "Fornecedor": "TRANSPORTES FURLONG DO BRASIL S.A", "TipoVeiculo": "TRUCK", "PlacaVeiculo": "EPU7349", "NomeMotorista": "MARCOS PAULO INACIO", "HoraProgramada": `15/07/2025 10:00` },
+                    "30537737": { "Fornecedor": "JAT TRANSPORTES E LOGISTICA S.A", "TipoVeiculo": "CARRETA", "PlacaVeiculo": "DBC4I69", "NomeMotorista": "DUANY NASCIMENTO ANDRADE", "HoraProgramada": `16/07/2025 10:00` },
+                    "30537865": { "Fornecedor": "JAT TRANSPORTES E LOGISTICA S.A", "TipoVeiculo": "CARRETA", "PlacaVeiculo": "GVK1F85", "NomeMotorista": "IVAN MACEDO DE MATOS", "HoraProgramada": `17/07/2025 10:00` },
+                    "30537884": { "Fornecedor": "JAT TRANSPORTES E LOGISTICA S.A", "TipoVeiculo": "CARRETA", "PlacaVeiculo": "JRI4I07", "NomeMotorista": "JOAO ELIELSON CAVALCANTE", "HoraProgramada": `18/07/2025 10:00` },
+                    "30537895": { "Fornecedor": "TRANSPORTES FURLONG BR. S/A", "TipoVeiculo": "TRUCK", "PlacaVeiculo": "NTN1625", "NomeMotorista": "FABIO RIBEIRO ARO", "HoraProgramada": `19/07/2025 10:00` },
+                    "30537909": { "Fornecedor": "TRANSPORTES FURLONG BR. S/A", "TipoVeiculo": "TRUCK", "PlacaVeiculo": "GYI2242", "NomeMotorista": "ERALDO MENDES DA SILVA", "HoraProgramada": `20/07/2025 10:00` },
+                    "30537945": { "Fornecedor": "TRANSPORTES FURLONG BR. S/A", "TipoVeiculo": "TRUCK", "PlacaVeiculo": "FYC7358", "NomeMotorista": "IVAN PEREIRA", "HoraProgramada": `21/07/2025 10:00` },
+                    "30537949": { "Fornecedor": "JAT TRANSPORTES E LOGISTICA S.A", "TipoVeiculo": "CARRETA", "PlacaVeiculo": "AMB7H83", "NomeMotorista": "ELIESER ESTEVES CAPUTO", "HoraProgramada": `22/07/2025 10:00` },
+                    "30538001": { "Fornecedor": "TRANSPORTES FURLONG BR. S/A", "TipoVeiculo": "TRUCK", "PlacaVeiculo": "EPU6G71", "NomeMotorista": "FABIO TABARIN ESCORCIO", "HoraProgramada": `23/07/2025 10:00` },
+                    "30538128": { "Fornecedor": "TORATRANSPORTES INDUSTRIAIS LTDA", "TipoVeiculo": "CARRETA", "PlacaVeiculo": "RMH8G49", "NomeMotorista": "BRENDO VIEIRA DE SOUZA", "HoraProgramada": `24/07/2025 10:00` },
+                    "30538210": { "Fornecedor": "JAT TRANSPORTES E LOGISTICA S.A", "TipoVeiculo": "CARRETA", "PlacaVeiculo": "JRI8688", "NomeMotorista": "DANIEL APARECIDO PINTO", "HoraProgramada": `25/07/2025 10:00` }
+                };
+
+                for (const mvmId in initialDetails) {
+                    const docRef = doc(mvmDetailsCollectionRef, mvmId);
+                    await setDoc(docRef, initialDetails[mvmId], { merge: true });
+                    console.log(`Detalhe MVM ${mvmId} adicionado/atualizado.`);
+                }
+                console.log("Detalhes iniciais de MVM populados.");
+            }
+
+            function populateVoiceList() { voices = synth.getVoices().filter(voice => voice.lang.startsWith('pt')); }
+
+            function setupSpeechRecognition() {
+                if (!SpeechRecognition) { micAllowed = false; return; }
+                recognition = new SpeechRecognition();
+                recognition.lang = 'pt-PT';
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.onstart = () => { isListening = true; updateMicIndicator(true); };
+                recognition.onresult = (event) => processInput(event.results[0][0].transcript);
+                recognition.onerror = (e) => {
+                    if (e.error === 'aborted') {
+                        console.log('Reconhecimento de voz abortado (esperado).');
+                        return;
+                    }
+                    console.error('Erro de reconhecimento:', e.error);
+                    if (e.error === 'no-speech') {
+                        isListening = false;
+                        updateMicIndicator(false);
+                        // Adiciona um atraso antes de pedir para repetir
+                        setTimeout(() => {
+                            addMessageToChat('bot', 'Não ouvi nada. Pode repetir, por favor?').then(() => startListening());
+                        }, 3000); // Atraso de 3 segundos
+                        return;
+                    }
+                    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { micAllowed = false; updateUIAfterStateChange(flows.main_menu.start); }
+                };
+                recognition.onend = () => {
+                    isListening = false;
+                    updateMicIndicator(false);
+                    if (intentionalStop) {
+                        intentionalStop = false;
+                    }
+                };
+            }
+
+            async function requestMicPermission() {
+                permissionError.classList.add('hidden');
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { micAllowed = false; return; }
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                    micAllowed = true;
+                } catch (err) {
+                    permissionError.textContent = 'O acesso ao microfone foi negado. A funcionalidade de voz está desativada, mas pode usar o teclado.';
+                    permissionError.classList.remove('hidden');
+                    micAllowed = false;
+                }
+            }
+            
+            function updateMicIndicator(isListeningNow) {
+                micIndicator.classList.remove('listening-animation', 'bg-blue-500', 'text-white', 'bg-red-500');
+                micIndicator.classList.add('bg-slate-200', 'text-slate-500');
+                if (isListeningNow) {
+                    micIndicator.classList.add('listening-animation', 'bg-blue-500', 'text-white');
+                }
+            }
+            
+            function speak(text) {
+                return new Promise((resolve) => {
+                    if (micAllowed) stopListening(true);
+                    updateMicIndicator(false);
+                    if (synth.speaking) synth.cancel();
+                    
+                    const utterThis = new SpeechSynthesisUtterance(text);
+                    const portugueseVoices = synth.getVoices().filter(v => v.lang.startsWith('pt'));
+                    const maleVoice = portugueseVoices.find(v => v.name.toLowerCase().includes('felipe')) ||
+                                     portugueseVoices.find(v => v.name.toLowerCase().includes('daniel')) ||
+                                     portugueseVoices.find(v => v.name.toLowerCase().includes('antónio')) ||
+                                     portugueseVoices.find(v => v.name.toLowerCase().includes('antônio')) ||
+                                     portugueseVoices.find(v => v.name.toLowerCase().includes('masculino')) ||
+                                     portugueseVoices.find(v => v.name.toLowerCase().includes('male')) ||
+                                     portugueseVoices.find(v => v.name.includes('Google português do Brasil')); 
+                    
+                    utterThis.voice = maleVoice || voices[0];
+                    utterThis.pitch = 1; utterThis.rate = 1.1;
+                    utterThis.onerror = (e) => { if (e.error !== 'interrupted') console.error('Erro na fala:', e.error); resolve(); };
+                    utterThis.onend = () => { setTimeout(resolve, 100); };
+                    synth.speak(utterThis);
+                });
+            }
+
+            async function addMessageToChat(sender, text) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('chat-bubble', 'flex', sender === 'user' ? 'justify-end' : 'justify-start');
+                const bubble = document.createElement('div');
+                bubble.classList.add('p-3', 'rounded-xl', 'max-w-xs', 'md:max-w-md', 'whitespace-pre-wrap', 'shadow');
+                if (sender === 'user') bubble.classList.add('bg-blue-600', 'text-white'); else bubble.classList.add('bg-slate-200', 'text-slate-800');
+                bubble.prepend(document.createTextNode(text));
+                messageDiv.appendChild(bubble);
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                if (sender === 'bot') {
+                    await speak(text);
+                }
+                const currentFlow = flows[currentFlowType];
+                const currentNode = currentFlow[currentState.split('.')[1]];
+                if (currentNode && currentNode.type === 'input') {
+                    userInput.focus();
+                }
+            }
+
+            async function processInput(inputText) {
+                console.log('processInput: Start, chatContext:', JSON.stringify(window.chatContext));
+                userInput.value = ''; // Clear input at the very start of processing
+                const transcript = inputText.toLowerCase().trim();
+                console.log('processInput: Received transcript:', transcript); // Log the received transcript
+
+                if (transcript === 'cancelar') {
+                    await addMessageToChat('user', 'Cancelar');
+                    await addMessageToChat('bot', 'Operação cancelada. A reiniciar...');
+                    setTimeout(resetAndRestart, 1500);
+                    return;
+                }
+                
+                if (micAllowed) stopListening();
+                
+                const currentFlow = flows[currentFlowType];
+                const currentNode = currentFlow[currentState.split('.')[1]];
+
+                if (!currentNode) {
+                    console.error("processInput: No current node found for state:", currentState);
+                    await addMessageToChat('bot', 'Ocorreu um erro inesperado no fluxo. Reiniciando.');
+                    setTimeout(resetAndRestart, 1500);
+                    return;
+                }
+
+                // New defensive check: if transcript is empty, and it's not a direct input state (like MVM or Plate), ignore.
+                // This prevents 'no-speech' or 'aborted' from triggering unintended validations.
+                if (transcript === '' && (currentNode.type === 'choice' || currentNode.type === 'confirmation')) {
+                    console.log('processInput: Empty transcript received for choice/confirmation node, ignoring.');
+                    return; // Ignore and wait for valid input
+                }
+
+
+                // Centralized input processing based on currentNode.type
+                switch (currentNode.type) {
+                    case 'choice':
+                        let chosenOption = null;
+                        if (currentFlowType === 'main_menu') {
+                            if (transcript.includes('check-in') || transcript.includes('checkin')) {
+                                chosenOption = 'CHECK-IN';
+                            } else if (transcript.includes('check-out') || transcript.includes('checkout')) {
+                                chosenOption = 'CHECK-OUT';
+                            }
+                        } else if (currentState === 'checkin_flow.select_bolsao') {
+                            if (transcript.includes('bolsão 01') || transcript.includes('bolsao 01') || transcript.includes('01')) {
+                                chosenOption = 'BOLSÃO 01';
+                            } else if (transcript.includes('bolsão 02') || transcript.includes('bolsao 02') || transcript.includes('02')) {
+                                chosenOption = 'BOLSÃO 02';
+                            }
+                        }
+
+                        if (chosenOption) {
+                            await addMessageToChat('user', chosenOption);
+                            if (currentFlowType === 'main_menu') {
+                                if (chosenOption === 'CHECK-IN') {
+                                    currentFlowType = 'checkin_flow';
+                                    currentState = 'checkin_flow.select_bolsao';
+                                    await changeState('select_bolsao');
+                                } else if (chosenOption === 'CHECK-OUT') {
+                                    currentFlowType = 'checkout_flow';
+                                    currentState = 'checkout_flow.start';
+                                    await changeState('start');
+                                }
+                            } else if (currentState === 'checkin_flow.select_bolsao') {
+                                 window.chatContext.bolsao_numero = chosenOption.replace('BOLSÃO ', '');
+                                 await changeState('solicita_mvm_apos_bolsao');
+                            }
+                        } else {
+                            await addMessageToChat('bot', 'Não entendi. Por favor, selecione uma das opções.');
+                            startListening();
+                        }
+                        break;
+
+                    case 'confirmation':
+                        if (transcript.includes('sim')) {
+                            await handleConfirmation('sim');
+                        } else if (transcript.includes('não') || transcript.includes('nao')) {
+                            await handleConfirmation('não');
+                        } else {
+                            await addMessageToChat('bot', 'Não entendi. Por favor, diga ou digite "Sim" ou "Não".');
+                            // Adicionado: Atraso de 10 segundos antes de reativar o microfone para confirmação
+                            await new Promise(resolve => setTimeout(resolve, 10000));
+                            startListening();
+                        }
+                        return; // IMPORTANT: Exit after handling confirmation
+                        break;
+
+                    case 'input':
+                        // Handle MVM/Plate input based on currentFlowType and currentState
+                        let isValidInput = false;
+                        let validationRegex = null;
+                        let validationErrorMsg = null;
+                        let nextStateForValidInput = null;
+
+                        if (currentFlowType === 'checkin_flow') {
+                            if (currentState.split('.')[1] === 'solicita_mvm_apos_bolsao' || currentState.split('.')[1] === 'verifica_mvm' || currentState.split('.')[1] === 'correcao_mvm') {
+                                validationRegex = flows.checkin_flow.solicita_mvm_apos_bolsao.validation.regex;
+                                validationErrorMsg = flows.checkin_flow.solicita_mvm_apos_bolsao.validation.error;
+                                nextStateForValidInput = 'verifica_mvm';
+                                const numbers = transcript.replace(/\D/g, '');
+                                if (validationRegex.test(numbers)) {
+                                    isValidInput = true;
+                                    await addMessageToChat('user', numbers);
+                                    window.chatContext.codigo_mvm = numbers;
+                                    await changeState(nextStateForValidInput);
+                                }
+                            } else if (currentState.split('.')[1] === 'solicita_placa_veiculo' || currentState.split('.')[1] === 'placa_nao_encontrada') {
+                                validationRegex = flows.checkin_flow.solicita_placa_veiculo.validation.regex;
+                                validationErrorMsg = flows.checkin_flow.solicita_placa_veiculo.validation.error;
+                                nextStateForValidInput = 'verifica_placa_veiculo';
+                                const placa = transcript.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                if (validationRegex.test(placa)) {
+                                    isValidInput = true;
+                                    await addMessageToChat('user', placa);
+                                    window.chatContext.placa_veiculo = placa;
+                                    await changeState(nextStateForValidInput);
+                                }
+                            }
+                        } else if (currentFlowType === 'checkout_flow') {
+                            if (currentState.split('.')[1] === 'start' || currentState.split('.')[1] === 'verifica_mvm_checkout' || currentState.split('.')[1] === 'mvm_nao_encontrado_checkout' || currentState.split('.')[1] === 'mvm_ja_registado_checkout') {
+                                validationRegex = flows.checkout_flow.start.validation.regex;
+                                validationErrorMsg = flows.checkout_flow.start.validation.error;
+                                nextStateForValidInput = 'verifica_mvm_checkout';
+                                const numbers = transcript.replace(/\D/g, '');
+                                if (validationRegex.test(numbers)) {
+                                    isValidInput = true;
+                                    await addMessageToChat('user', numbers);
+                                    window.chatContext.codigo_mvm = numbers;
+                                    await changeState(nextStateForValidInput);
+                                }
+                            }
+                        }
+
+                        if (!isValidInput) {
+                            await new Promise(resolve => setTimeout(resolve, 10000));
+                            await addMessageToChat('bot', validationErrorMsg);
+                            startListening();
+                        }
+                        break;
+
+                    default:
+                        // Fallback for unexpected input type, re-prompt current message
+                        await addMessageToChat('bot', currentNode.message);
+                        startListening();
+                        break;
+                }
+            }
+            
+            async function handleConfirmation(choice) {
+                await addMessageToChat('user', choice.charAt(0).toUpperCase() + choice.slice(1));
+                const currentFlow = flows[currentFlowType];
+                const currentNode = currentFlow[currentState.split('.')[1]];
+                const nextState = currentNode.options[choice];
+                await changeState(nextState);
+            }
+
+            async function changeState(newStateName) {
+                console.log('changeState: Start, newStateName:', newStateName, 'chatContext:', JSON.stringify(window.chatContext));
+                
+                currentState = `${currentFlowType}.${newStateName}`;
+                
+                const currentFlow = flows[currentFlowType];
+                const currentNode = currentFlow[newStateName];
+
+                if (!currentNode) { stopListening(); return; }
+                
+                updateUIAfterStateChange(currentNode);
+
+                let message = currentNode.message;
+                if (message && window.chatContext.lookupResult) {
+                    Object.keys(window.chatContext.lookupResult).forEach(key => {
+                        message = message.replace(`{{lookup.${key}}}`, window.chatContext.lookupResult[key]);
+                    });
+                }
+                if (message && window.chatContext.bolsao_numero) {
+                    message = message.replace(`{{chatContext.bolsao_numero}}`, window.chatContext.bolsao_numero);
+                }
+
+                if (currentNode.type === 'final') {
+                    mvmFailureCount = 0;
+                    await addMessageToChat('bot', message);
+                    showFinalScreen(message);
+                    return;
+                }
+                
+                if (message) {
+                    await addMessageToChat('bot', message);
+                    if ((['input', 'confirmation', 'choice'].includes(currentNode.type)) && micAllowed) {
+                        // Atraso de 10 segundos para inputs e confirmações
+                        if (currentNode.type === 'input' || currentNode.type === 'confirmation' || currentNode.type === 'choice') { // Adicionado 'choice' para o atraso de 10s
+                            await new Promise(resolve => setTimeout(resolve, 10000)); // 10 second delay
+                        }
+                        // Pequeno atraso antes de iniciar o reconhecimento para evitar 'aborted'
+                        setTimeout(() => {
+                            startListening();
+                        }, 500); // 0.5 second delay
+                    }
+                } else if (currentNode.type === 'action') {
+                    showLoading();
+                    await addMessageToChat('bot', `A verificar...`);
+                    const result = await performAction(currentNode.action);
+                    hideLoading();
+
+                    let nextFlowStateName;
+                    if (currentNode.action === 'checkParkingAuthorization') {
+                        if (result.status === 'ok') {
+                            nextFlowStateName = currentNode.success;
+                        } else if (result.status === 'late') {
+                            nextFlowStateName = currentNode.late;
+                        } else if (result.status === 'too_early') {
+                            nextFlowStateName = currentNode.failure;
+                        } else {
+                            console.error("Status inesperado de checkParkingAuthorization:", result.status);
+                            nextFlowStateName = 'erro_registro_entrada_bolsao';
+                        }
+                    } else {
+                        nextFlowStateName = result.status === 'success' ? currentNode.success : currentNode.failure;
+                    }
+
+                    if (result.status === 'success') {
+                        mvmFailureCount = 0;
+                        if (currentNode.action === 'lookupMVM' || currentNode.action === 'lookupPlacaVeiculo' || currentNode.action === 'lookupMVMCheckout') {
+                            window.chatContext.lookupResult = result.data;
+                            console.log('lookupResult set:', JSON.stringify(window.chatContext.lookupResult));
+                        }
+                    } else {
+                        mvmFailureCount++;
+                    }
+
+                    if (mvmFailureCount >= 3 && result.status === 'failure') {
+                        await addMessageToChat('bot', 'Não foi possível localizar os dados após três tentativas. A operação será reiniciada.');
+                        setTimeout(resetAndRestart, 2000);
+                    } else {
+                        await changeState(nextFlowStateName);
+                    }
+                }
+            }
+
+            function updateUIAfterStateChange(currentNode) {
+                micIndicator.disabled = !micAllowed;
+                const isChoiceOrConfirmation = currentNode.type === 'choice' || currentNode.type === 'confirmation';
+
+                interactionArea.classList.toggle('hidden', isChoiceOrConfirmation);
+                interactionArea.classList.toggle('flex', !isChoiceOrConfirmation);
+
+                choiceArea.classList.toggle('hidden', !isChoiceOrConfirmation);
+                choiceArea.classList.toggle('flex', isChoiceOrConfirmation);
+                
+                if (isChoiceOrConfirmation) {
+                    choiceArea.innerHTML = '';
+                    const optionsToDisplay = currentNode.options;
+                    if (currentNode.type === 'confirmation') {
+                        Object.keys(optionsToDisplay).forEach(optKey => {
+                            const btn = document.createElement('button');
+                            btn.innerText = optKey.charAt(0).toUpperCase() + optKey.slice(1);
+                            btn.className = 'choice-button w-full p-3 rounded-xl text-white font-bold shadow-md transition bg-blue-600 hover:bg-blue-700';
+                            btn.onclick = () => processInput(optKey);
+                            choiceArea.appendChild(btn);
+                        });
+                    } else {
+                        optionsToDisplay.forEach(optText => {
+                            const btn = document.createElement('button');
+                            btn.innerText = optText;
+                            btn.className = 'choice-button w-full p-3 rounded-xl text-white font-bold shadow-md transition bg-blue-600 hover:bg-blue-700';
+                            btn.onclick = () => processInput(optText);
+                            choiceArea.appendChild(btn);
+                        });
+                    }
+                }
+
+                micIndicator.style.display = micAllowed ? 'flex' : 'none';
+            }
+
+            function showLoading() {
+                loadingIndicator.classList.remove('hidden');
+                loadingIndicator.classList.add('flex');
+            }
+
+            function hideLoading() {
+                loadingIndicator.classList.add('hidden');
+                loadingIndicator.classList.remove('flex');
+            }
+
+            function startListening() {
+                if (!micAllowed || isListening) return;
+                try {
+                    intentionalStop = false;
+                    recognition.start(); 
+                } 
+                catch (err) { console.error("Erro ao iniciar a escuta:", err); isListening = false; }
+            }
+
+            function stopListening(abort = false) {
+                isListening = false; 
+                if (micAllowed && recognition) {
+                    intentionalStop = true;
+                    recognition.abort(); 
+                }
+            }
+
+            async function showFinalScreen(text) {
+                finalMessage.innerText = text;
+                mainContent.querySelector('#chat-container').classList.add('hidden');
+                mainContent.querySelector('#input-footer').classList.add('hidden');
+                finalScreen.classList.remove('hidden');
+                finalScreen.classList.add('flex');
+                await speak(text);
+            }
+
+            function resetAndRestart() {
+                mainContent.classList.add('hidden');
+                welcomeScreen.classList.remove('hidden');
+                welcomeScreen.classList.add('flex');
+                chatContainer.innerHTML = '';
+                finalScreen.classList.add('hidden');
+                mainContent.querySelector('#chat-container').classList.remove('hidden');
+                mainContent.querySelector('#input-footer').classList.remove('hidden');
+                interactionArea.classList.remove('hidden');
+                interactionArea.classList.add('flex');
+                choiceArea.classList.add('hidden');
+                updateMicIndicator('idle');
+                window.chatContext = {
+                    lookupResult: {}, 
+                    codigo_mvm: null,
+                    placa_veiculo: null,
+                    bolsao_numero: null,
+                    parking_authorized: null,
+                };
+                currentState = 'main_menu.start';
+                currentFlowType = 'main_menu';
+                mvmFailureCount = 0;
+                if(synth.speaking) synth.cancel();
+            }
+
+            async function performAction(actionName) {
+                console.log(`performAction: ${actionName}, chatContext before action:`, JSON.stringify(window.chatContext));
+                let result;
+                if (actionName === 'lookupMVM') result = await lookupMVM(window.chatContext.codigo_mvm);
+                else if (actionName === 'lookupPlacaVeiculo') result = await lookupPlacaVeiculo(window.chatContext.placa_veiculo);
+                else if (actionName === 'checkParkingAuthorization') {
+                    result = await checkParkingAuthorization(window.chatContext.lookupResult?.HoraProgramada);
+                }
+                else if (actionName === 'registerBolsaoEntry') {
+                    result = await registerBolsaoEntry(window.chatContext.codigo_mvm, window.chatContext.bolsao_numero);
+                }
+                else if (actionName === 'lookupMVMCheckout') result = await lookupMVMCheckout(window.chatContext.codigo_mvm);
+                else if (actionName === 'registerCheckout') result = await registerCheckout(window.chatContext.codigo_mvm);
+                else result = { status: 'failure', message: 'Ação desconhecida.' };
+
+                if (result.status === 'success' && !result.data && (actionName === 'lookupMVM' || actionName === 'lookupPlacaVeiculo' || actionName === 'lookupMVMCheckout')) {
+                    console.error(`performAction: Action ${actionName} returned success status but data is missing!`, result);
+                    result.status = 'failure';
+                    result.message = 'Dados incompletos após a ação.';
+                }
+                return result;
+            }
+
+            async function lookupMVM(mvm) {
+                if (!isAuthReady) {
+                    console.warn("Firebase não está pronto para operações Firestore. Por favor, aguarde a autenticação.");
+                    return { status: 'failure' };
+                }
+
+                const mvmDetailsRef = doc(db, `artifacts/${appId}/public/data/mvm_details`, mvm);
+                const mvmStatusRef = doc(db, `artifacts/${appId}/public/data/mvm_status`, mvm);
+
+                try {
+                    const [detailsSnap, statusSnap] = await Promise.all([getDoc(mvmDetailsRef), getDoc(mvmStatusRef)]);
+
+                    const mvmData = detailsSnap.exists() ? detailsSnap.data() : null;
+                    const currentMvmStatus = statusSnap.exists() ? statusSnap.data().status : null;
+
+                    if (!mvmData) {
+                        return { status: 'failure' };
+                    }
+
+                    if (currentMvmStatus === 'bolsao_entry') {
+                        return { status: 'duplicate' };
+                    } else {
+                        return { status: 'success', data: mvmData };
+                    }
+                } catch (error) {
+                    console.error("Erro ao procurar MVM no Firestore:", error);
+                    return { status: 'failure' };
+                }
+            }
+
+            async function lookupPlacaVeiculo(placa) {
+                if (!isAuthReady) {
+                    console.warn("Firebase não está pronto para operações Firestore. Por favor, aguarde a autenticação.");
+                    return { status: 'failure' };
+                }
+
+                const mvmDetailsCollectionRef = collection(db, `artifacts/${appId}/public/data/mvm_details`);
+                const q = query(mvmDetailsCollectionRef, where("PlacaVeiculo", "==", placa.toUpperCase()));
+                
+                try {
+                    const querySnapshot = await getDocs(q);
+                    if (!querySnapshot.empty) {
+                        const mvmDoc = querySnapshot.docs[0];
+                        const mvmId = mvmDoc.id;
+                        const mvmData = mvmDoc.data();
+
+                        const mvmStatusRef = doc(db, `artifacts/${appId}/public/data/mvm_status`, mvmId);
+                        const statusSnap = await getDoc(mvmStatusRef);
+                        const currentMvmStatus = statusSnap.exists() ? statusSnap.data().status : null;
+
+                        if (currentMvmStatus === 'bolsao_entry') {
+                            return { status: 'duplicate' };
+                        } else {
+                            window.chatContext.codigo_mvm = mvmId;
+                            return { status: 'success', data: mvmData };
+                        }
+                    } else {
+                        return { status: 'failure' };
+                    }
+                } catch (error) {
+                    console.error("Erro ao procurar placa do veículo no Firestore:", error);
+                    return { status: 'failure' };
+                }
+            }
+
+            async function checkParkingAuthorization(scheduledTimeStr) {
+                if (!scheduledTimeStr || typeof scheduledTimeStr !== 'string') {
+                    console.error("checkParkingAuthorization: HoraProgramada é inválida ou não é uma string:", scheduledTimeStr);
+                    return { status: 'failure' };
+                }
+
+                const [datePart, timePart] = scheduledTimeStr.split(' ');
+                const [day, month, year] = datePart.split('/').map(Number);
+                const [hour, minute] = timePart.split(':').map(Number);
+
+                const scheduledDateTime = new Date(year, month - 1, day, hour, minute, 0);
+
+                const now = new Date();
+
+                const timeDifferenceMs = scheduledDateTime.getTime() - now.getTime();
+                const timeDifferenceHours = timeDifferenceMs / (1000 * 60 * 60);
+
+                console.log(`Hora atual: ${now.toLocaleString('pt-BR')}, Hora Programada: ${scheduledDateTime.toLocaleString('pt-BR')}, Diferença: ${timeDifferenceHours.toFixed(2)} horas`);
+
+                if (timeDifferenceHours <= 2 && timeDifferenceHours >= 0) {
+                    window.chatContext.parking_authorized = true;
+                    return { status: 'ok' };
+                } else if (timeDifferenceHours < 0) {
+                    window.chatContext.parking_authorized = true;
+                    return { status: 'late' };
+                } else {
+                    window.chatContext.parking_authorized = false;
+                    return { status: 'too_early' };
+                }
+            }
+
+            async function registerBolsaoEntry(mvm, bolsao) {
+                if (!isAuthReady) {
+                    console.warn("Firebase não está pronto para operações Firestore. Por favor, aguarde a autenticação.");
+                    return { status: 'failure' };
+                }
+                console.log('registerBolsaoEntry: window.chatContext.lookupResult before setDoc:', JSON.stringify(window.chatContext.lookupResult)); 
+
+                const mvmStatusRef = doc(db, `artifacts/${appId}/public/data/mvm_status`, mvm);
+                try {
+                    await setDoc(mvmStatusRef, {
+                        status: 'bolsao_entry',
+                        entry_time: new Date().toISOString(),
+                        bolsao_number: bolsao,
+                        userId: userId,
+                        hora_programada: window.chatContext.lookupResult.HoraProgramada,
+                        parking_authorized: window.chatContext.parking_authorized
+                    }, { merge: true });
+                    return { status: 'success' };
+                } catch (error) {
+                    console.error("Erro ao registrar entrada no bolsão no Firestore:", error);
+                    return { status: 'failure' };
+                }
+            }
+
+            async function lookupMVMCheckout(mvm) {
+                if (!isAuthReady) {
+                    console.warn("Firebase não está pronto para operações Firestore. Por favor, aguarde a autenticação.");
+                    return { status: 'failure' };
+                }
+
+                const mvmDetailsRef = doc(db, `artifacts/${appId}/public/data/mvm_details`, mvm);
+                const mvmStatusRef = doc(db, `artifacts/${appId}/public/data/mvm_status`, mvm);
+
+                try {
+                    const [detailsSnap, statusSnap] = await Promise.all([getDoc(mvmDetailsRef), getDoc(mvmStatusRef)]);
+
+                    const mvmData = detailsSnap.exists() ? detailsSnap.data() : null;
+                    const currentMvmStatus = statusSnap.exists() ? statusSnap.data().status : null;
+
+                    if (!mvmData) {
+                        return { status: 'failure' };
+                    }
+
+                    if (currentMvmStatus === 'checked-out') {
+                        return { status: 'duplicate_checkout' };
+                    } else if (currentMvmStatus === 'bolsao_entry') {
+                        return { status: 'success', data: mvmData };
+                    } else {
+                        return { status: 'not_checked_in' };
+                    }
+                } catch (error) {
+                    console.error("Erro ao procurar MVM para check-out no Firestore:", error);
+                    return { status: 'failure' };
+                }
+            }
+
+            async function registerCheckout(mvm) {
+                if (!isAuthReady) {
+                    console.warn("Firebase não está pronto para operações Firestore. Por favor, aguarde a autenticação.");
+                    return { status: 'failure' };
+                }
+                const mvmStatusRef = doc(db, `artifacts/${appId}/public/data/mvm_status`, mvm);
+                try {
+                    await updateDoc(mvmStatusRef, {
+                        status: 'checked-out',
+                        checkout_time: new Date().toISOString(),
+                        userId_checkout: userId
+                    });
+                    return { status: 'success' };
+                } catch (error) {
+                    console.error("Erro ao registrar check-out no Firestore:", error);
+                    return { status: 'failure' };
+                }
+            }
+            
+            async function generateExcelReport() {
+                if (!isAuthReady) {
+                    await addMessageToChat('bot', 'Por favor, aguarde a autenticação do Firebase para gerar o relatório.');
+                    return;
+                }
+                showLoading();
+                await addMessageToChat('bot', 'A gerar o relatório Excel, por favor aguarde...');
+
+                const mvmStatusCollectionRef = collection(db, `artifacts/${appId}/public/data/mvm_status`);
+                const mvmDetailsCollectionRef = collection(db, `artifacts/${appId}/public/data/mvm_details`);
+
+                try {
+                    const statusSnapshot = await getDocs(mvmStatusCollectionRef);
+                    let csvContent = "MVM,Placa Veículo,Transportadora,Nome Motorista,Hora Programada,Hora Entrada Bolsão,Bolsão,Autorizado Estacionar,Hora Saída Bolsão,Usuário Saída\n";
+
+                    for (const docSnapshot of statusSnapshot.docs) {
+                        const statusData = docSnapshot.data();
+                        const mvmId = docSnapshot.id;
+
+                        const detailDoc = await getDoc(doc(mvmDetailsCollectionRef, mvmId));
+                        const detailData = detailDoc.exists() ? detailDoc.data() : {};
+
+                        const placa = detailData.PlacaVeiculo || 'N/A';
+                        const fornecedor = detailData.Fornecedor || 'N/A';
+                        const motorista = detailData.NomeMotorista || 'N/A';
+
+                        const horaProgramada = statusData.hora_programada || 'N/A';
+                        const entryTime = statusData.entry_time ? new Date(statusData.entry_time).toLocaleString('pt-BR') : 'N/A';
+                        const bolsaoNumber = statusData.bolsao_number || 'N/A';
+                        const parkingAuthorized = statusData.parking_authorized ? 'Sim' : 'Não';
+                        const checkoutTime = statusData.checkout_time ? new Date(statusData.checkout_time).toLocaleString('pt-BR') : 'N/A';
+                        const userIdCheckout = statusData.userId_checkout || 'N/A';
+
+                        csvContent += `${mvmId},"${placa}","${fornecedor}","${motorista}","${horaProgramada}","${entryTime}",${bolsaoNumber},${parkingAuthorized},"${checkoutTime}","${userIdCheckout}"\n`;
+                    }
+
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement("a");
+                    if (link.download !== undefined) {
+                        const url = URL.createObjectURL(blob);
+                        link.setAttribute("href", url);
+                        link.setAttribute("download", "relatorio_bolsoes_stellantis.csv");
+                        link.style.visibility = 'hidden';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    } else {
+                        console.warn("Seu navegador não suporta o atributo 'download'. O arquivo pode não ser baixado automaticamente.");
+                        window.open(encodeURI("data:text/csv;charset=utf-8," + csvContent));
+                    }
+                    await addMessageToChat('bot', 'Relatório Excel gerado e download iniciado!');
+                } catch (error) {
+                    console.error("Erro ao gerar relatório Excel:", error);
+                    await addMessageToChat('bot', 'Ocorreu um erro ao gerar o relatório Excel. Por favor, tente novamente.');
+                } finally {
+                    hideLoading();
+                }
+            }
+            
+            // --- Event Listeners ---
+            startButton.addEventListener('click', async () => {
+                await requestMicPermission();
+                setupSpeechRecognition(); 
+                welcomeScreen.classList.add('hidden');
+                welcomeScreen.classList.remove('flex');
+                mainContent.classList.remove('hidden');
+                mainContent.classList.add('flex');
+                await speak('');
+                await changeState('start'); // Inicia no menu principal
+            });
+            micIndicator.addEventListener('click', () => {
+                if (micAllowed && !isListening) startListening(); else if (micAllowed && isListening) stopListening();
+            });
+            sendButton.addEventListener('click', () => {
+                const text = userInput.value;
+                if (text) {
+                    processInput(text);
+                    userInput.value = '';
+                }
+            });
+            userInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const text = userInput.value;
+                    if (text) {
+                        processInput(text);
+                        userInput.value = '';
+                    }
+                }
+            });
+            newOperationButton.addEventListener('click', resetAndRestart); 
+
+            excelReportButton.addEventListener('click', generateExcelReport);
+            
+            // Configuração inicial
+            populateVoiceList();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = populateVoiceList;
+            }
+            initializeFirebase();
+        };
+    </script>
+</body>
+</html>
