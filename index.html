@@ -82,7 +82,7 @@
                 <p class="text-sm text-slate-300">STELLAN, seu assistente virtual</p>
             </div>
             <div class="flex items-center space-x-2">
-                <span id="user-id-display" class="text-xs text-slate-300">ID: Carregando...</span>
+                <!-- Removido: <span id="user-id-display" class="text-xs text-slate-300">ID: Carregando...</span> -->
                 <div id="status-indicator" class="w-4 h-4 rounded-full bg-green-500 transition-colors duration-500" title="Online"></div>
             </div>
         </header>
@@ -160,7 +160,7 @@
             const mainContent = document.getElementById('main-content');
             const chatContainer = document.getElementById('chat-container');
             const finalScreen = document.getElementById('final-screen');
-            const finalMessage = document.getElementById('final-message'); // Corrected ID here
+            const finalMessage = document.getElementById('final-message');
             const newOperationButton = document.getElementById('new-operation-button');
             const micIndicator = document.getElementById('mic-indicator');
             const choiceArea = document.getElementById('choice-area');
@@ -168,7 +168,7 @@
             const userInput = document.getElementById('userInput');
             const sendButton = document.getElementById('sendButton');
             const loadingIndicator = document.getElementById('loading-indicator');
-            const userIdDisplay = document.getElementById('user-id-display');
+            const userIdDisplay = document.getElementById('user-id-display'); // This element is not in HTML, but keeping the variable is harmless.
             const excelReportButton = document.getElementById('excelReportButton');
 
             // --- APIs de Voz ---
@@ -289,7 +289,7 @@
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        userIdDisplay.textContent = `ID: ${userId}`;
+                        // userIdDisplay.textContent = `ID: ${userId}`; // Removed this line
                         isAuthReady = true;
                         console.log("Firebase authenticated. User ID:", userId);
                         await populateInitialMVMData();
@@ -549,7 +549,7 @@
                             await handleConfirmation('não');
                         } else {
                             await addMessageToChat('bot', 'Não entendi. Por favor, diga ou digite "Sim" ou "Não".');
-                            // Adicionado: Atraso de 10 segundos antes de reativar o microfone para confirmação
+                            // Atraso de 10 segundos antes de reativar o microfone para confirmação
                             await new Promise(resolve => setTimeout(resolve, 10000));
                             startListening();
                         }
